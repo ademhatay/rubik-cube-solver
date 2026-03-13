@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2x2 Rubik Küp Çözücü</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>2x2 Rubik Küp Çözücü</h1>
+  <p class="subtitle">Renkleri girin veya karıştırın, ardından çözümü izleyin</p>
+
+  <div class="container">
+
+    <!-- Sol: 3D Küp -->
+    <div>
+      <div class="cube-wrapper" style="cursor:grab;">
+        <div class="cube-scene" id="cube-scene"></div>
+      </div>
+
+      <!-- Döndürme Kontrolleri -->
+      <div class="section">
+        <div class="section-title">Küp Görünümü (ok tuşları veya sürükle)</div>
+        <div class="rotation-controls">
+          <div class="rot-arrows">
+            <button class="rot-btn" id="rot-up" title="Yukarı döndür">&#9650;</button>
+            <div class="rot-mid-row">
+              <button class="rot-btn" id="rot-left" title="Sola döndür">&#9664;</button>
+              <button class="rot-btn rot-reset" id="rot-reset" title="Varsayılan açı">&#8634;</button>
+              <button class="rot-btn" id="rot-right" title="Sağa döndür">&#9654;</button>
+            </div>
+            <button class="rot-btn" id="rot-down" title="Aşağı döndür">&#9660;</button>
+          </div>
+          <div class="view-presets">
+            <button class="view-btn" data-view="front">Ön</button>
+            <button class="view-btn" data-view="back">Arka</button>
+            <button class="view-btn" data-view="top">Üst</button>
+            <button class="view-btn" data-view="bottom">Alt</button>
+            <button class="view-btn" data-view="left">Sol</button>
+            <button class="view-btn" data-view="right">Sağ</button>
+            <button class="view-btn active" data-view="perspective">3D</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Açılmış Küp (Net) -->
+      <div class="section">
+        <div class="section-title">Açılmış Görünüm (tıklayarak renk atayın)</div>
+        <div class="cube-net" id="cube-net"></div>
+      </div>
+    </div>
+
+    <!-- Sağ: Kontroller -->
+    <div class="panel">
+
+      <!-- Renk Paleti -->
+      <div class="section">
+        <div class="section-title">Renk Seçici</div>
+        <div class="palette">
+          <button class="palette-btn color-w" data-color="w" title="Beyaz"></button>
+          <button class="palette-btn color-y" data-color="y" title="Sarı"></button>
+          <button class="palette-btn color-g" data-color="g" title="Yeşil"></button>
+          <button class="palette-btn color-b" data-color="b" title="Mavi"></button>
+          <button class="palette-btn color-o" data-color="o" title="Turuncu"></button>
+          <button class="palette-btn color-r" data-color="r" title="Kırmızı"></button>
+        </div>
+      </div>
+
+      <!-- Aksiyon Butonları -->
+      <div class="section">
+        <div class="section-title">Eylemler</div>
+        <div class="btn-row">
+          <button class="btn btn-secondary" id="btn-reset">Sıfırla</button>
+          <button class="btn btn-secondary" id="btn-scramble">Karıştır</button>
+          <button class="btn btn-secondary" id="btn-validate">Doğrula</button>
+          <button class="btn btn-primary" id="btn-solve">Çöz</button>
+          <button class="btn btn-cam" id="btn-scan">Kamera Tara</button>
+        </div>
+      </div>
+
+      <!-- Kamera Tarama Paneli -->
+      <div id="scanner-panel" class="scanner-panel" style="display:none;">
+        <div class="scanner-header">
+          <span class="scanner-title">Kamera Tarama</span>
+          <div class="scanner-header-right">
+            <div class="scan-face-row">
+              <span class="scan-face-label">Yüz:</span>
+              <div class="scan-face-tabs" id="scan-face-tabs">
+                <button class="face-tab active" data-face="F">F</button>
+                <button class="face-tab" data-face="R">R</button>
+                <button class="face-tab" data-face="B">B</button>
+                <button class="face-tab" data-face="L">L</button>
+                <button class="face-tab" data-face="U">U</button>
+                <button class="face-tab" data-face="D">D</button>
+              </div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="btn-scan-close">Kapat</button>
+          </div>
+        </div>
+        <div class="scanner-body">
+          <div class="scanner-video-wrap">
+            <video id="scanner-video" playsinline muted></video>
+            <canvas id="scanner-overlay"></canvas>
+          </div>
+          <div class="scanner-bottom">
+            <div class="scan-preview-wrap">
+              <span class="scan-preview-label">Algılanan:</span>
+              <canvas id="scan-preview" width="80" height="80"></canvas>
+            </div>
+            <button class="btn btn-success btn-capture-main" id="btn-capture">Yakala ve Uygula</button>
+          </div>
+        </div>
+        <!-- Gizli select (eski uyumluluk) -->
+        <select id="scan-face-select" style="display:none;">
+          <option value="F">F</option><option value="R">R</option>
+          <option value="B">B</option><option value="L">L</option>
+          <option value="U">U</option><option value="D">D</option>
+        </select>
+      </div>
+
+      <!-- Manuel Hamleler -->
+      <div class="section">
+        <div class="section-title">Manuel Hamleler</div>
+        <div id="move-buttons" class="move-buttons"></div>
+      </div>
+
+      <!-- Mesaj Alanı -->
+      <div id="message" class="message"></div>
+
+      <!-- Çözüm Paneli -->
+      <div id="solution-panel" class="solution-panel" style="display:none;">
+        <div class="section-title">Çözüm Adımları</div>
+        <div id="step-info" style="font-size:0.85rem; color:#888; margin-bottom:6px;"></div>
+        <div id="solution-moves" class="solution-moves"></div>
+        <div class="btn-row" style="margin-top:10px;">
+          <button class="btn btn-secondary" id="btn-prev" disabled>◀ Önceki</button>
+          <button class="btn btn-success" id="btn-next" disabled>Sonraki ▶</button>
+          <button class="btn btn-primary" id="btn-play-all" disabled>▶▶ Otomatik</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="cube.js?v=2"></script>
+  <script src="validator.js?v=2"></script>
+  <script src="solver.js?v=2"></script>
+  <script src="app.js?v=2"></script>
+  <script src="scanner.js?v=2"></script>
+
+  <!-- Live Reload: her 1 saniyede dosya değişikliğini kontrol et -->
+  <script>
+  (function() {
+    let lastHash = null;
+    const files = ['cube.js', 'validator.js', 'solver.js', 'app.js', 'scanner.js', 'style.css', 'index.html'];
+    async function check() {
+      try {
+        const contents = await Promise.all(
+          files.map(f => fetch(f + '?t=' + Date.now()).then(r => r.text()).catch(() => ''))
+        );
+        const hash = contents.join('').length + '|' + contents.map(c => c.length).join(',');
+        if (lastHash !== null && hash !== lastHash) {
+          location.reload();
+        }
+        lastHash = hash;
+      } catch(e) {}
+    }
+    setInterval(check, 1000);
+  })();
+  </script>
+
+</body>
+</html>

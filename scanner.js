@@ -139,12 +139,11 @@ function drawOverlay() {
   ctx.drawImage(video, 0, 0, vw, vh);
   ctx.restore();
 
-  // Kılavuz çerçeve
-  const size = Math.min(vw, vh) * 0.55;
+  // Kılavuz çerçeve — ekranın %60'ı
+  const size = Math.min(vw, vh) * 0.6;
   const x0 = (vw - size) / 2;
   const y0 = (vh - size) / 2;
   const cellSize = size / 2;
-  const gap = 4;
 
   // Karartma
   ctx.fillStyle = 'rgba(0,0,0,0.5)';
@@ -215,15 +214,49 @@ function drawOverlay() {
 
   canvas.dataset.detected = JSON.stringify(detectedColors);
 
-  // Üst bilgi etiketi
+  // Yüz bilgisi ve yönlendirme talimatları
   const faceNames = { F: 'Ön', R: 'Sağ', B: 'Arka', L: 'Sol', U: 'Üst', D: 'Alt' };
-  ctx.fillStyle = 'rgba(0,0,0,0.6)';
-  ctx.fillRect(x0, y0 - 36, size, 32);
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 16px sans-serif';
+  const faceInstructions = {
+    F: 'Küpü doğrudan karşına tut',
+    R: 'Küpü sola doğru 90° çevir →',
+    B: 'Küpü 180° çevir (arkasını göster)',
+    L: 'Küpü sağa doğru 90° çevir ←',
+    U: 'Küpü öne eğ, üst yüzü göster ↓',
+    D: 'Küpü arkaya eğ, alt yüzü göster ↑',
+  };
+
+  const fontSize = Math.max(14, Math.floor(size * 0.07));
+
+  // Üst etiket arka planı
+  ctx.fillStyle = 'rgba(0,0,0,0.75)';
+  const labelH = fontSize * 3.2;
+  ctx.beginPath();
+  ctx.roundRect(x0, y0 - labelH - 8, size, labelH, 8);
+  ctx.fill();
+
+  // Yüz adı
+  ctx.fillStyle = '#7c3aed';
+  ctx.font = `bold ${fontSize * 1.2}px sans-serif`;
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(`${scanFace} — ${faceNames[scanFace]} Yüz`, x0 + size / 2, y0 - 20);
+  ctx.textBaseline = 'top';
+  ctx.fillText(`${scanFace} — ${faceNames[scanFace]} Yüz`, x0 + size / 2, y0 - labelH - 2);
+
+  // Yönlendirme
+  ctx.fillStyle = '#fff';
+  ctx.font = `${fontSize}px sans-serif`;
+  ctx.fillText(faceInstructions[scanFace], x0 + size / 2, y0 - labelH + fontSize * 1.4);
+
+  // Alt köşelere hücre numaraları (1-4)
+  ctx.font = `bold ${Math.floor(cellSize * 0.15)}px sans-serif`;
+  ctx.fillStyle = 'rgba(255,255,255,0.3)';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'top';
+  for (let row = 0; row < 2; row++) {
+    for (let col = 0; col < 2; col++) {
+      const num = row * 2 + col + 1;
+      ctx.fillText(num, x0 + col * cellSize + 6, y0 + row * cellSize + 4);
+    }
+  }
 
   animFrameId = requestAnimationFrame(drawOverlay);
 }

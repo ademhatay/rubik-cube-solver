@@ -71,7 +71,7 @@ async function startScanner() {
   const video = document.getElementById('scanner-video');
   const panel = document.getElementById('scanner-panel');
 
-  panel.style.display = 'block';
+  panel.style.display = 'flex';
 
   // Önce arka kamerayı dene
   try {
@@ -125,24 +125,40 @@ function drawOverlay() {
   const preview = document.getElementById('scan-preview');
   const previewCtx = preview.getContext('2d');
 
+  // Canvas'ı ekran boyutuna ayarla (CSS pixel)
+  const wrap = canvas.parentElement;
+  const cw = wrap.clientWidth;
+  const ch = wrap.clientHeight;
+  canvas.width = cw;
+  canvas.height = ch;
+
   const vw = video.videoWidth || 640;
   const vh = video.videoHeight || 480;
-  canvas.width = vw;
-  canvas.height = vh;
 
-  // Ön kamerada yatay aynalama düzelt
+  // Video'yu cover modunda canvas'a çiz
+  const videoAspect = vw / vh;
+  const canvasAspect = cw / ch;
+  let sx = 0, sy = 0, sw = vw, sh = vh;
+  if (videoAspect > canvasAspect) {
+    sw = vh * canvasAspect;
+    sx = (vw - sw) / 2;
+  } else {
+    sh = vw / canvasAspect;
+    sy = (vh - sh) / 2;
+  }
+
   ctx.save();
   if (usingFrontCamera) {
-    ctx.translate(vw, 0);
+    ctx.translate(cw, 0);
     ctx.scale(-1, 1);
   }
-  ctx.drawImage(video, 0, 0, vw, vh);
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, cw, ch);
   ctx.restore();
 
-  // Kılavuz çerçeve — ekranın %60'ı
-  const size = Math.min(vw, vh) * 0.6;
-  const x0 = (vw - size) / 2;
-  const y0 = (vh - size) / 2;
+  // Grid — her zaman kare, ekranın kısa kenarının %55'i
+  const size = Math.min(cw, ch) * 0.55;
+  const x0 = (cw - size) / 2;
+  const y0 = (ch - size) / 2;
   const cellSize = size / 2;
 
   // Karartma
